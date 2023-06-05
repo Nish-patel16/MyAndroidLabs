@@ -12,7 +12,7 @@
         android:theme="@style/Theme.NishsAndroidLabs"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name="algonquin.cst2335.pate1088.ui.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

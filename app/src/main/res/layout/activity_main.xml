@@ -37,5 +37,39 @@
         />
 
 
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/checkbox"
+        android:text="@string/coffeemessage"
+        />
+
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/Switch"
+        android:text="@string/coffeemessage"
+        />
+
+    <RadioButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/Radio"
+        android:text="@string/coffeemessage"
+        />
+
+    <ImageView
+        android:id="@+id/myimageview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/alg" />
+
+    <ImageButton
+        android:src="@drawable/alg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/myimagebutton"
+    />
+
 
 </androidx.appcompat.widget.LinearLayoutCompat>

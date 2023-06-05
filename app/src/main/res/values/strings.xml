@@ -2,4 +2,6 @@
     <string name="app_name">Nish\'s  Android Labs</string>
     <string name="hello_message">Hello World!</string>
     <string name="button_message">I am a button</string>
+    <string name="coffeemessage">Do you drink Coffee? </string>
+    <string name="hintmessage">Write something here</string>
 </resources>
