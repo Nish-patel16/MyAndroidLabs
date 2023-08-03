@@ -1,9 +1,7 @@
 package algonquin.cst2335.pate1088;
 
 import static algonquin.cst2335.pate1088.ChatRoom.chatModel;
-import static algonquin.cst2335.pate1088.ChatRoom.mDAO;
 import static algonquin.cst2335.pate1088.ChatRoom.messages;
-import static algonquin.cst2335.pate1088.ChatRoom.myAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -17,10 +15,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -44,8 +45,67 @@ public class ChatRoom extends AppCompatActivity {
 
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu, menu);
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch( item.getItemId() ) {
+            case R.id.item_1:
+                ChatMessage selectedMessage = chatModel.selectedMessage.getValue();
+                if (selectedMessage != null) {
+                    int position = messages.indexOf(selectedMessage);
+                    if (position != -1) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        builder.setMessage("Do you want to delete the message: " + selectedMessage.getMessage())
+                                .setTitle("Question:")
+                                .setPositiveButton("Yes", (dialogI, cl) -> {
+                                    ChatMessage m = messages.get(position);
+                                    messages.remove(position);
+                                    myAdapter.notifyItemRemoved(position);
+
+                                    Executor thread = Executors.newSingleThreadExecutor();
+                                    thread.execute(() -> {
+                                        mDAO.deleteMessage(m);
+                                    });
+
+                                    Snackbar.make(binding.getRoot(), "You deleted message #" + position, Snackbar.LENGTH_LONG)
+                                            .setAction("Undo", snackbar -> {
+                                                messages.add(position, m);
+                                                myAdapter.notifyItemInserted(position);
+                                                Executor thread1 = Executors.newSingleThreadExecutor();
+                                                thread1.execute(() -> {
+                                                    mDAO.insertMessage(m);
+                                                });
+                                            })
+                                            .show();
+                                })
+                                .setNegativeButton("No", (dialogI, cl) -> {})
+                                .create()
+                                .show();
+                    }
+                }
+                break;
+
+            case R.id.item_2:
+                Toast.makeText(this, "Version 1.0, created by Nish Patel", Toast.LENGTH_SHORT).show();
+                break;
+        }
+
+        return true;
+    }
+
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        binding = ActivityChatRoomBinding.inflate(getLayoutInflater());
+        setSupportActionBar(binding.myToolbar);
+
+
         chatModel = new ViewModelProvider(this).get(ChatRoomViewModel.class);
 
         MessageDatabase db = Room.databaseBuilder(getApplicationContext(), MessageDatabase.class, "MessageDatabase").build();
@@ -72,7 +132,6 @@ public class ChatRoom extends AppCompatActivity {
             }
         });
 
-        binding = ActivityChatRoomBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd-MMM-yyyy hh-mm-ss a");
@@ -100,7 +159,7 @@ public class ChatRoom extends AppCompatActivity {
 
             Executor thread = Executors.newSingleThreadExecutor();
             thread.execute(() -> {
-                mDAO.insertMessage(message);
+                message.id=(int) mDAO.insertMessage(message);
             });
         });
 
@@ -137,15 +196,16 @@ public class ChatRoom extends AppCompatActivity {
             }
         });
 
-        chatModel.selectedMessage.observe(this, (newMessageValue) -> {
-            MessageDetailsFragment chatFragment = new MessageDetailsFragment( newMessageValue );
-            FragmentManager fMgr = getSupportFragmentManager();
-            FragmentTransaction tx = fMgr.beginTransaction();
-            tx.replace(R.id.fragmentLocation, chatFragment);
-            tx.addToBackStack("");
-            tx.commit();
 
-        });
+//        chatModel.selectedMessage.observe(this, (newMessageValue) -> {
+//            MessageDetailsFragment chatFragment = new MessageDetailsFragment( newMessageValue );
+//            FragmentManager fMgr = getSupportFragmentManager();
+//            FragmentTransaction tx = fMgr.beginTransaction();
+//            tx.replace(R.id.fragmentLocation, chatFragment);
+//            tx.addToBackStack("");
+//            tx.commit();
+//
+//        });
 
     }
 }
@@ -155,52 +215,20 @@ class MyRowHolder extends RecyclerView.ViewHolder {
     TextView timeText;
     ImageView senderImage;
 
-
-
     public MyRowHolder(@NonNull View itemView) {
         super(itemView);
 
         itemView.setOnClickListener(clk -> {
-
             int position = getAbsoluteAdapterPosition();
             ChatMessage selected = messages.get(position);
 
             chatModel.selectedMessage.postValue(selected);
 
-            /*int position = getAbsoluteAdapterPosition();
-            AlertDialog.Builder builder = new AlertDialog.Builder(itemView.getContext());
-            builder.setMessage("Do you want to delete the message: " + messageText.getText())
-                    .setTitle("Question:")
-                    .setNegativeButton("No", (dialog, cl) -> {
-                    })
-                    .setPositiveButton("Yes", (dialog, cl) -> {
 
-                        ChatMessage m = messages.get(position);
-                        messages.remove(position);
-                        myAdapter.notifyItemRemoved(position);
-
-                        Executor thread = Executors.newSingleThreadExecutor();
-                        thread.execute(() -> {
-                            mDAO.deleteMessage(m);
-                        });
-
-                        Snackbar.make(messageText, "You deleted a message#" + position, Snackbar.LENGTH_LONG)
-                                .setAction("Undo", click -> {
-                                    messages.add(position, m);
-                                    myAdapter.notifyItemInserted(position);
-                                    Executor thread1 = Executors.newSingleThreadExecutor();
-                                    thread1.execute(() -> {
-                                        mDAO.insertMessage(m);
-                                    });
-                                })
-                                .show();
-
-                    }).create().show();*/
         });
 
         messageText = itemView.findViewById(R.id.messageText);
         timeText = itemView.findViewById(R.id.timeText);
         senderImage = itemView.findViewById(R.id.senderImage);
     }
-
 }
