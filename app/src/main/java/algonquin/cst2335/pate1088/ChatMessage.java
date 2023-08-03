@@ -41,4 +41,8 @@ public class ChatMessage {
     public boolean isSentButton() {
         return isSentButton;
     }
+
+    public int getId() {
+        return id;
+    }
 }

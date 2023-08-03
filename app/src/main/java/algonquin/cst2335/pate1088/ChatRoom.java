@@ -1,5 +1,6 @@
 package algonquin.cst2335.pate1088;
 
+import static algonquin.cst2335.pate1088.ChatRoom.chatModel;
 import static algonquin.cst2335.pate1088.ChatRoom.mDAO;
 import static algonquin.cst2335.pate1088.ChatRoom.messages;
 import static algonquin.cst2335.pate1088.ChatRoom.myAdapter;
@@ -7,6 +8,8 @@ import static algonquin.cst2335.pate1088.ChatRoom.myAdapter;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -33,24 +36,25 @@ import algonquin.cst2335.pate1088.databinding.SentMessageBinding;
 
 public class ChatRoom extends AppCompatActivity {
 
-    ChatRoomViewModel chatModel;
+    static ChatRoomViewModel chatModel;
     static ArrayList<ChatMessage> messages;
     ActivityChatRoomBinding binding;
     static  RecyclerView.Adapter<MyRowHolder> myAdapter;
     static  ChatMessageDAO mDAO;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         chatModel = new ViewModelProvider(this).get(ChatRoomViewModel.class);
 
-        MessageDatabase db = Room.databaseBuilder(getApplicationContext(), MessageDatabase.class, "database-name").build();
+        MessageDatabase db = Room.databaseBuilder(getApplicationContext(), MessageDatabase.class, "MessageDatabase").build();
         mDAO = db.cmDAO();
 
         messages = chatModel.messages.getValue();
         if(messages == null)
         {
-            messages = new ArrayList<ChatMessage>(); // just update the list, do not reassign
+            messages = new ArrayList<>(); // just update the list, do not reassign
             chatModel.messages.postValue(messages);
 
             Executor thread = Executors.newSingleThreadExecutor();
@@ -84,6 +88,7 @@ public class ChatRoom extends AppCompatActivity {
             thread.execute(() -> {
                 message.id=(int) mDAO.insertMessage(message);
             });
+
         });
 
         binding.receiveButton.setOnClickListener(click -> {
@@ -131,13 +136,26 @@ public class ChatRoom extends AppCompatActivity {
                 return messages.get(position).isSentButton() ? 0 : 1;
             }
         });
+
+        chatModel.selectedMessage.observe(this, (newMessageValue) -> {
+            MessageDetailsFragment chatFragment = new MessageDetailsFragment( newMessageValue );
+            FragmentManager fMgr = getSupportFragmentManager();
+            FragmentTransaction tx = fMgr.beginTransaction();
+            tx.replace(R.id.fragmentLocation, chatFragment);
+            tx.addToBackStack("");
+            tx.commit();
+
+        });
+
     }
 }
 
 class MyRowHolder extends RecyclerView.ViewHolder {
     TextView messageText;
     TextView timeText;
-    ImageView senderImage; // Update this with your image view ID
+    ImageView senderImage;
+
+
 
     public MyRowHolder(@NonNull View itemView) {
         super(itemView);
@@ -145,10 +163,16 @@ class MyRowHolder extends RecyclerView.ViewHolder {
         itemView.setOnClickListener(clk -> {
 
             int position = getAbsoluteAdapterPosition();
-            AlertDialog.Builder builder = new AlertDialog.Builder( itemView.getContext() );
+            ChatMessage selected = messages.get(position);
+
+            chatModel.selectedMessage.postValue(selected);
+
+            /*int position = getAbsoluteAdapterPosition();
+            AlertDialog.Builder builder = new AlertDialog.Builder(itemView.getContext());
             builder.setMessage("Do you want to delete the message: " + messageText.getText())
                     .setTitle("Question:")
-                    .setNegativeButton("No", (dialog, cl) -> {})
+                    .setNegativeButton("No", (dialog, cl) -> {
+                    })
                     .setPositiveButton("Yes", (dialog, cl) -> {
 
                         ChatMessage m = messages.get(position);
@@ -171,11 +195,12 @@ class MyRowHolder extends RecyclerView.ViewHolder {
                                 })
                                 .show();
 
-                    }).create().show();
+                    }).create().show();*/
         });
 
         messageText = itemView.findViewById(R.id.messageText);
         timeText = itemView.findViewById(R.id.timeText);
         senderImage = itemView.findViewById(R.id.senderImage);
     }
+
 }
